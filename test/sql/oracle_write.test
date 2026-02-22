@@ -1,0 +1,44 @@
+-- oracle_write.test
+-- 書き込み操作の検証（READ_ONLY モードでは失敗するはず）
+
+statement ok
+ATTACH '//localhost:1521/FREEPDB1 user=scott password=tiger' AS oracle_rw (TYPE oracle);
+
+# CREATE TABLE
+statement ok
+CREATE TABLE oracle_rw.SCOTT.TEST_DUCKDB (
+    id INTEGER,
+    name VARCHAR,
+    created_at TIMESTAMP
+);
+
+# INSERT
+statement ok
+INSERT INTO oracle_rw.SCOTT.TEST_DUCKDB VALUES (1, 'Alice', NOW());
+
+# 確認
+query III
+SELECT id, name FROM oracle_rw.SCOTT.TEST_DUCKDB ORDER BY id;
+----
+1	Alice
+
+# COPY FROM parquet
+statement ok
+COPY oracle_rw.SCOTT.TEST_DUCKDB FROM 'test_data.parquet';
+
+# DROP
+statement ok
+DROP TABLE oracle_rw.SCOTT.TEST_DUCKDB;
+
+statement ok
+DETACH oracle_rw;
+
+# READ_ONLY では書き込み失敗
+statement ok
+ATTACH '//localhost:1521/FREEPDB1 user=scott password=tiger' AS oracle_ro (TYPE oracle, READ_ONLY);
+
+statement error
+INSERT INTO oracle_ro.SCOTT.SOME_TABLE VALUES (1);
+
+statement ok
+DETACH oracle_ro;

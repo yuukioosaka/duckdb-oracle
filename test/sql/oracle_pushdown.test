@@ -1,0 +1,33 @@
+-- oracle_pushdown.test
+-- フィルタ & LIMIT プッシュダウンの検証
+
+statement ok
+ATTACH '//localhost:1521/FREEPDB1 user=scott password=tiger' AS oracle_db (TYPE oracle);
+
+# 等値フィルタのプッシュダウン
+query I
+EXPLAIN SELECT * FROM oracle_db.HR.EMPLOYEES WHERE EMPLOYEE_ID = 100;
+----
+contains: oracle_scan
+
+# LIMIT プッシュダウン (Oracle 12c+: FETCH FIRST)
+query I
+SELECT COUNT(*) FROM (SELECT * FROM oracle_db.HR.EMPLOYEES LIMIT 10);
+----
+10
+
+# 複合フィルタ
+query I
+SELECT COUNT(*) FROM oracle_db.HR.EMPLOYEES
+WHERE DEPARTMENT_ID = 90 AND SALARY > 10000;
+----
+(some integer)
+
+# IS NULL プッシュダウン
+query I
+SELECT COUNT(*) FROM oracle_db.HR.EMPLOYEES WHERE COMMISSION_PCT IS NULL;
+----
+(some integer)
+
+statement ok
+DETACH oracle_db;

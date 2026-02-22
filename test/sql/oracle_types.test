@@ -1,0 +1,38 @@
+-- oracle_types.test
+-- 型マッピングの検証（Oracle の ALL_TYPES テーブルが存在する前提）
+
+statement ok
+ATTACH '//localhost:1521/FREEPDB1 user=scott password=tiger' AS oracle_db (TYPE oracle);
+
+# NUMBER → BIGINT
+query I
+SELECT TYPEOF(num_col) FROM oracle_db.TEST_SCHEMA.TYPE_TEST LIMIT 1;
+----
+BIGINT
+
+# VARCHAR2 → VARCHAR
+query I
+SELECT TYPEOF(varchar_col) FROM oracle_db.TEST_SCHEMA.TYPE_TEST LIMIT 1;
+----
+VARCHAR
+
+# DATE → TIMESTAMP (Oracle DATE は時刻を含む)
+query I
+SELECT TYPEOF(date_col) FROM oracle_db.TEST_SCHEMA.TYPE_TEST LIMIT 1;
+----
+TIMESTAMP
+
+# TIMESTAMP WITH TIME ZONE → TIMESTAMPTZ
+query I
+SELECT TYPEOF(tstz_col) FROM oracle_db.TEST_SCHEMA.TYPE_TEST LIMIT 1;
+----
+TIMESTAMP WITH TIME ZONE
+
+# NULL 処理
+query I
+SELECT num_col FROM oracle_db.TEST_SCHEMA.TYPE_TEST WHERE num_col IS NULL LIMIT 1;
+----
+NULL
+
+statement ok
+DETACH oracle_db;

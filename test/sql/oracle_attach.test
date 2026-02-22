@@ -1,0 +1,27 @@
+-- oracle_attach.test
+-- DuckDB sqllogictest 形式
+
+# Oracle 接続（CI 用モックまたは実 Oracle が必要）
+
+# 基本的な ATTACH テスト
+statement ok
+ATTACH 'host=localhost port=1521 service=FREEPDB1 user=scott password=tiger' AS oracle_db (TYPE oracle, READ_ONLY);
+
+# テーブル一覧取得
+statement ok
+USE oracle_db;
+
+# 切断
+statement ok
+DETACH oracle_db;
+
+# EasyConnect 形式
+statement ok
+ATTACH '//localhost:1521/FREEPDB1 user=scott password=tiger' AS oracle_db2 (TYPE oracle);
+
+statement ok
+DETACH oracle_db2;
+
+# 型なし ATTACH（TYPE 必須）
+statement error
+ATTACH 'host=localhost' AS bad_db;
